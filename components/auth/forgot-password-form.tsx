@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { useAuth } from "@/lib/auth"
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const { resetPassword } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,9 +30,9 @@ export function ForgotPasswordForm() {
 
     try {
       setIsLoading(true)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      
+      // Use Supabase reset password functionality
+      await resetPassword(email)
 
       setIsSubmitted(true)
       toast({

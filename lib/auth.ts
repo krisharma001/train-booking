@@ -1,24 +1,23 @@
-// This is a simple client-side auth implementation
-// In a real app, you would use a proper auth solution like NextAuth.js or Auth.js
-
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { supabase } from "./supabase";
 
 export interface User {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  avatar?: string
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatar?: string;
 }
 
 interface AuthState {
-  user: User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (firstName: string, lastName: string, email: string, password: string) => Promise<void>
-  logout: () => void
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 export const useAuth = create<AuthState>()(
@@ -29,67 +28,131 @@ export const useAuth = create<AuthState>()(
       isLoading: false,
 
       login: async (email: string, password: string) => {
-        set({ isLoading: true })
+        set({ isLoading: true });
 
         try {
-          // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 1000))
+          // Sign in with Supabase
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
 
-          // For demo purposes, we'll just check if the email contains "test"
-          if (!email.includes("@")) {
-            throw new Error("Invalid email format")
+          if (error) {
+            throw error;
           }
 
-          // Mock successful login
+          if (!data.user) {
+            throw new Error("No user returned from Supabase");
+          }
+
+          // Get user profile from profiles table
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profileError) {
+            throw profileError;
+          }
+
+          // Set user data in state
           const user: User = {
-            id: "1",
-            firstName: "Krish",
-            lastName: "Sharma",
-            email: email,
-            avatar: "/placeholder-user.jpg",
-          }
+            id: data.user.id,
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            email: data.user.email || '',
+            avatar: profile.avatar_url,
+          };
 
-          set({ user, isAuthenticated: true, isLoading: false })
+          set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
-          set({ isLoading: false })
-          throw error
+          set({ isLoading: false });
+          throw error;
         }
       },
 
       signup: async (firstName: string, lastName: string, email: string, password: string) => {
-        set({ isLoading: true })
+        set({ isLoading: true });
 
         try {
-          // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 1000))
+          // Sign up with Supabase
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+          });
 
-          // For demo purposes, we'll just check if the email contains "@"
-          if (!email.includes("@")) {
-            throw new Error("Invalid email format")
+          if (error) {
+            throw error;
           }
 
-          // Mock successful signup
+          if (!data.user) {
+            throw new Error("No user returned from Supabase");
+          }
+
+          // Create profile in profiles table
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                avatar_url: '/placeholder-user.jpg',
+                created_at: new Date(),
+              },
+            ]);
+
+          if (profileError) {
+            throw profileError;
+          }
+
+          // Set user data in state
           const user: User = {
-            id: "1",
+            id: data.user.id,
             firstName,
             lastName,
             email,
-            avatar: "/placeholder-user.jpg",
-          }
+            avatar: '/placeholder-user.jpg',
+          };
 
-          set({ user, isAuthenticated: true, isLoading: false })
+          set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
-          set({ isLoading: false })
-          throw error
+          set({ isLoading: false });
+          throw error;
         }
       },
 
-      logout: () => {
-        set({ user: null, isAuthenticated: false })
+      logout: async () => {
+        try {
+          // Sign out from Supabase
+          await supabase.auth.signOut();
+          set({ user: null, isAuthenticated: false });
+        } catch (error) {
+          console.error("Error during logout:", error);
+          throw error;
+        }
+      },
+
+      resetPassword: async (email: string) => {
+        try {
+          // Request password reset with Supabase
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/auth/reset-password`,
+          });
+
+          if (error) {
+            throw error;
+          }
+        } catch (error) {
+          console.error("Error during password reset:", error);
+          throw error;
+        }
       },
     }),
     {
       name: "trainiac-auth", // name of the item in localStorage
-    },
-  ),
-)
+    }
+  )
+);

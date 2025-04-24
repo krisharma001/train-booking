@@ -62,7 +62,7 @@ const features = [
 export function Features() {
   return (
     <div className="mt-12">
-      <h2 className="text-2xl font-bold mb-6">Explore More With TrainGo</h2>
+      <h2 className="text-2xl font-bold mb-6">Explore More With Trainiac</h2>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
