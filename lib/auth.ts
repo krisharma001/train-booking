@@ -45,9 +45,9 @@ export const useAuth = create<AuthState>()(
             throw new Error("No user returned from Supabase");
           }
 
-          // Get user profile from profiles table
+          // Get user profile from users table
           const { data: profile, error: profileError } = await supabase
-            .from('profiles')
+            .from('users')
             .select('*')
             .eq('id', data.user.id)
             .single();
@@ -62,7 +62,6 @@ export const useAuth = create<AuthState>()(
             firstName: profile.first_name,
             lastName: profile.last_name,
             email: data.user.email || '',
-            avatar: profile.avatar_url,
           };
 
           set({ user, isAuthenticated: true, isLoading: false });
@@ -90,17 +89,15 @@ export const useAuth = create<AuthState>()(
             throw new Error("No user returned from Supabase");
           }
 
-          // Create profile in profiles table
+          // Create profile in users table
           const { error: profileError } = await supabase
-            .from('profiles')
+            .from('users')
             .insert([
               {
                 id: data.user.id,
                 first_name: firstName,
                 last_name: lastName,
                 email: email,
-                avatar_url: '/placeholder-user.jpg',
-                created_at: new Date(),
               },
             ]);
 
@@ -114,7 +111,6 @@ export const useAuth = create<AuthState>()(
             firstName,
             lastName,
             email,
-            avatar: '/placeholder-user.jpg',
           };
 
           set({ user, isAuthenticated: true, isLoading: false });
