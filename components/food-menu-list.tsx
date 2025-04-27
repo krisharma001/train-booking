@@ -176,7 +176,7 @@ export function FoodMenuList() {
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold">{item.name}</h3>
-                          <Badge variant={item.isVeg ? "success" : "default"} className="ml-2">
+                          <Badge variant={item.isVeg ? "outline" : "default"} className="ml-2">
                             {item.isVeg ? "Veg" : "Non-Veg"}
                           </Badge>
                         </div>
@@ -213,7 +213,7 @@ export function FoodMenuList() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <h3 className="font-semibold">{item.name}</h3>
-                            <Badge variant="success" className="ml-2">
+                            <Badge variant="outline" className="ml-2">
                               Veg
                             </Badge>
                           </div>
