@@ -1,9 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Calendar } from "lucide-react"
+import { Clock, Calendar, Shield } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 interface SearchResultsListProps {
@@ -14,6 +15,16 @@ interface SearchResultsListProps {
 }
 
 export function SearchResultsList({ trains, date, from, to }: SearchResultsListProps) {
+  // Track selected class for each train
+  const [selectedClasses, setSelectedClasses] = useState<Record<string, string>>({})
+
+  const handleClassSelect = (trainNumber: string, classType: string) => {
+    setSelectedClasses((prev) => ({
+      ...prev,
+      [trainNumber]: classType,
+    }))
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -50,7 +61,7 @@ export function SearchResultsList({ trains, date, from, to }: SearchResultsListP
               <div className="flex items-center justify-between">
                 <Link
                   href={`/trains/${train.trainNumber}`}
-                  className="text-primary hover:underline text-lg font-semibold"
+                  className="text-orange-500 hover:underline text-lg font-semibold"
                 >
                   {train.trainNumber} {train.trainName}
                 </Link>
@@ -113,18 +124,63 @@ export function SearchResultsList({ trains, date, from, to }: SearchResultsListP
               </div>
             </div>
 
-            <div className="grid grid-cols-3 divide-x">
-              {train.classes.slice(0, 3).map((classType: string, idx: number) => (
-                <div key={idx} className="p-4 text-center">
-                  <div className="font-medium">{classType}</div>
-                  <div className="text-gray-600">₹{Math.floor(Math.random() * 1000) + 500}</div>
-                  <div className="text-green-600 font-medium mt-1">
-                    {Math.random() > 0.3
-                      ? `AVL ${Math.floor(Math.random() * 50)}`
-                      : `WL ${Math.floor(Math.random() * 20)}`}
+            <div className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-y-0 md:divide-x">
+              {train.classes.map((classType: string, idx: number) => {
+                // Generate random price and availability
+                const price = Math.floor(Math.random() * 1000) + 500
+                const isAvailable = Math.random() > 0.3
+                const availSeats = Math.floor(Math.random() * 50)
+                const waitlistNumber = Math.floor(Math.random() * 20)
+                const status = isAvailable ? `AVL ${availSeats}` : `WL ${waitlistNumber}`
+                const hasGuarantee = Math.random() > 0.7
+
+                return (
+                  <div
+                    key={idx}
+                    className={`p-4 text-center cursor-pointer transition-colors ${
+                      selectedClasses[train.trainNumber] === classType
+                        ? "bg-blue-50 border-blue-200"
+                        : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => handleClassSelect(train.trainNumber, classType)}
+                  >
+                    <div className="font-medium">{classType}</div>
+                    <div className="text-gray-600">₹{price}</div>
+                    <div className={`font-medium mt-1 ${isAvailable ? "text-green-600" : "text-red-600"}`}>
+                      {status}
+                    </div>
+                    {hasGuarantee && (
+                      <div className="flex justify-center mt-2">
+                        <Badge
+                          variant="outline"
+                          className="text-xs flex items-center gap-1 bg-green-50 border-green-200"
+                        >
+                          <Shield className="h-3 w-3" />
+                          Travel Guarantee
+                        </Badge>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
+            </div>
+
+            <div className="p-4 bg-gray-50 flex justify-end">
+              <Button
+                disabled={!selectedClasses[train.trainNumber]}
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                asChild
+              >
+                <Link
+                  href={
+                    selectedClasses[train.trainNumber]
+                      ? `/booking/new?train=${train.trainNumber}&from=${encodeURIComponent(sourceStation.stationCode)}&to=${encodeURIComponent(destinationStation.stationCode)}&date=${encodeURIComponent(date)}&class=${selectedClasses[train.trainNumber]}`
+                      : "#"
+                  }
+                >
+                  Book Now
+                </Link>
+              </Button>
             </div>
           </div>
         )
